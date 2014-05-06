@@ -6,10 +6,10 @@ import time
 import datetime
 import cointools
 
-dbhost=
-dbuser=
-dbpassword=
-dbname=
+dbhost=''
+dbuser=''
+dbpassword=''
+dbname=''
 
 blocksperfile=100
 
@@ -101,6 +101,9 @@ def transactions_in_block(blockobject):
     newtransactions=0
     newaddresses=0
     returns=[]
+    lt=len(transactions)
+    lk=1
+    
     for trans in transactions:
         newtransactions=newtransactions+1
         #handle inputs
@@ -128,19 +131,37 @@ def transactions_in_block(blockobject):
 
         outs=trans['out']
         for out in outs:
-            addr=out['addr']
-            amt=out['value']
+            try:
+                addr=out['addr']
+                amt=out['value']
+            except:
+                addr='invalid'
+                amt=out['value']
            # print addr+"  "+str(amt)
 
-            a=read_address(addr)
-            if len(a)>0: #already exists in db:
-                newbtc=a[0][1]+amt
-                ntrans=a[0][2]+1
-                totrcv=a[0][3]+amt
-                update_address(addr,newbtc,ntrans,totrcv)
-            else:
-                add_address(addr,amt,1,amt)
-                newaddresses=newaddresses+1
+            if len(addr)>0:
+
+                a=read_address(addr)
+                if len(a)>0: #already exists in db:
+                    newbtc=a[0][1]+amt
+                    ntrans=a[0][2]+1
+                    totrcv=a[0][3]+amt
+                    update_address(addr,newbtc,ntrans,totrcv)
+                else:
+                    add_address(addr,amt,1,amt)
+                    newaddresses=newaddresses+1
+
+
+        #update overview as done with this tx
+        
+        f="UPDATE OVERVIEW SET LAST_TX_HASH='"+str(trans['hash'])+"';"
+        print trans['hash']+"  "+str(lk)+" / "+str(lt)
+        lk=lk+1
+        curs=db.cursor()
+        curs.execute(f)
+        
+ #   db.commit()
+   # db.close()
             
     returns.append(newaddresses)
     returns.append(newtransactions)
@@ -183,7 +204,7 @@ def block(x, local):
    #update overview data
     f="UPDATE OVERVIEW SET LASTBLOCK='"+str(x)+"'"
     f=f+",N_TRANSACTIONS='"+str(int(c[0][1])+overviewdata[1])+"',N_ADDRESSES='"
-    f=f+str(int(c[0][2])+overviewdata[0])+"',TIME='"+j+"';"
+    f=f+str(int(c[0][2])+overviewdata[0])+"',TIME='"+j+"', LAST_TX_HASH='donewithblock';"
 
     
     
@@ -195,6 +216,11 @@ def block(x, local):
     db.close()
     print "BLOCK: "+str(c[0][0])+"   N_ADDRESSES: "+str(c[0][2])+"  N_TRANSACTIONS: "+str(c[0][1])+"   "+str(j)
 
+    j=check()
+    if j==5000000000:
+        return True
+    else:
+        return False
 
 def check():
     global c
@@ -207,7 +233,7 @@ def check():
     b=0
     for x in c:
         b=b+x[0]
-    print b/(a+1)
+    return b/(a+1)
     
 
 def lastblock():
@@ -225,7 +251,11 @@ def blocks(start,end):  #inclusive
         while a<end+1:
             #t=(datetime.datetime.fromtimestamp(int(k)).strftime('%Y-%m-%d %H:%M:%S'))
             #print "BLOCK: "+str(a)#+"       "+str(t)
-            block(a,True)
+            j=block(a,True)
+
+            if not j:
+                a=end+1
+                print "Check not correct"
             
             a=a+1
     else:
@@ -260,6 +290,7 @@ def add_address(the_address,btc,ntransactions,totalreceived):
         db.commit()
 
 def update_address(the_address,btc,ntransactions,totalreceived):
+
    curs=db.cursor()
    
     #update existing entry
@@ -270,7 +301,7 @@ def update_address(the_address,btc,ntransactions,totalreceived):
         curs.execute(f)
         db.commit()
             
-
+    
 def delete_all_addresses():
     db=connect_to_db()
     curs=db.cursor()
@@ -309,9 +340,15 @@ def get_color_info(color):
         return 0
     return a[0]
 
+def info_to_addr(info):
+    a=info.encode('hex')
+    print len(a)
+    return cointools.hex_to_address(a)
+
 def send_color_coin(fromaddr,toaddr,amt,colorname,fromsecretexponent):
     #sends X satoshi to destination address (toaddr)
     #sends 1 satoshi to ColoredCoin Reference Address
+    #sends HEX INFO Base 58 encoded into address to indicate TX HASH of previous address
 
     db=connect_to_db()
     curs=db.cursor()
@@ -322,11 +359,21 @@ def send_color_coin(fromaddr,toaddr,amt,colorname,fromsecretexponent):
     sourceaddress=a[0][1]
 
     to=[]
-    to.append(toaddr)
-    to.append(referenceaddress)
+    to.append(toaddr)#destination first
+    to.append(referenceaddress)# reference address second
+    #previous tx  first half of identifying hash  is THIRD
+    #seoncd half of previous hash if FOURTH
+    prevtxhash='f85e3c10f02e11822bf6964456fabd126ef485f387246ecb94213ef577ca0a1b'   #GET THIS SOMEHOW
+    firsthalfhash=prevtxhash[0:len(prevtxhash)/2]
+    secondhalfhash=prevtxhash[len(prevtxhash)/2:len(prevtxhash)]
+    to.append(cointools.hex_to_address(firsthalfhash))
+    to.append(cointools.hex_to_address(secondhalfhash))
+
     outputs=[]
     p=amt*0.00000001
     outputs.append(p)
+    outputs.append(0.00000001)
+    outputs.append(0.00000001)
     outputs.append(0.00000001)
     fee=cointools.standard_fee
 
@@ -488,7 +535,36 @@ def download_tx(txid):
 
 
 #def search_reference_history(referenceaddress):  #searches history of reference id 
-  
+
+def check_address(addr):
+    a='https://blockchain.info/q/addressbalance/'+str(addr)
+    b=requests.get(a)
+    if b.status_code==200:
+        c=b.content
+        
+    #return c
+    curs=db.cursor()
+    f="SELECT * FROM Addresses WHERE Address='"+str(addr)+"';"
+    curs.execute(f)
+    g=curs.fetchall()
+    btc=g[0][1]
+
+    if btc==c:
+        p=0
+    else:
+        print str(addr)+"   "+str(c)+"   "+str(btc)
+
+def check_all_addresses():
+    curs=db.cursor()
+    f="SELECT * FROM Addresses;"
+    curs.execute(f)
+    g=curs.fetchall()
+    a=[]
+    for x in g:
+        a.append(x[0])
+    return a
+
+        
 init()
 
 db=connect_to_db()
