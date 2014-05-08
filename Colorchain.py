@@ -565,6 +565,68 @@ def check_all_addresses():
     return a
 
         
+
+def process_tx(blockn,fromtxhash):
+    blockobject=download_block(blockn)
+    blockobjectt=blockobject['tx']
+    for trans in blockobjectt:
+        newtransactions=0
+        newaddresses=0
+        returns=[]
+        if trans['hash']==fromtxhash:
+            #process that tx
+            
+            newtransactions=newtransactions+1
+            #handle inputs
+            inps=trans['inputs']
+            for ins in inps:
+                if(len(ins)>0):
+                    if blockobject['height']<129878:
+                        addr=ins['prev_out']['addr']
+                        amt=int(ins['prev_out']['value'])
+                      #  print addr +"  "+str(amt)
+                    else:
+                        addr=ins['prev_out']['addr']
+                        amt=ins['prev_out']['value']
+                       # print addr+"  "+str(amt)
+
+                    a=read_address(addr)
+                    if len(a)>0: #already exists in db:
+                        newbtc=a[0][1]-amt
+                        ntrans=a[0][2]+1
+                        totrcv=a[0][3]#-amt
+                        update_address(addr,newbtc,ntrans,totrcv)
+                    else:
+                        add_address(addr,-1*amt,1,0)
+                        newaddresses=newaddresses+1
+
+            outs=trans['out']
+            for out in outs:
+                try:
+                    addr=out['addr']
+                    amt=out['value']
+                except:
+                    addr='invalid'
+                    amt=out['value']
+               # print addr+"  "+str(amt)
+
+                if len(addr)>0:
+
+                    a=read_address(addr)
+                    if len(a)>0: #already exists in db:
+                        newbtc=a[0][1]+amt
+                        ntrans=a[0][2]+1
+                        totrcv=a[0][3]+amt
+                        update_address(addr,newbtc,ntrans,totrcv)
+                    else:
+                        add_address(addr,amt,1,amt)
+                        newaddresses=newaddresses+1
+
+
+            
+        
+        
+        
 init()
 
 db=connect_to_db()
