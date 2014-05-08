@@ -477,6 +477,7 @@ def send_many(fromaddr,outputs,destinations,fee, subkey1,subkey2, secretexponent
    pushtx(tx2)
 
 def make_info_script(info):
+   global f
    #OP RETURN SCRIPT
    a=info.encode('hex')
    g=len(info)
@@ -486,6 +487,8 @@ def make_info_script(info):
    while r<len(g):
       f=f+g[r]
       r=r+1
+   if len(f)<2:
+      f='0'+f
 
    b='6a'+f+a
    return b
@@ -528,13 +531,10 @@ def send_with_info(fromaddr,amt,destination, fee, secretexponent, info):
 
    priv=hashlib.sha256(secretexponent).hexdigest()
    tx2=tx
-   for i in range(0,outn):
+   for i in range(0,outn-1):
       tx2=sign(tx2,i,priv)
 
-fromaddr='1Myvq1HeQUY9kawMy2EzGMm9KU1nnF8hkB'
-se='7fc5eb552ff232dc739435c38e655aada101fb019831c6a04f21b5401333db02f5c4f781bdb5288ef7abfb2a831ba503902e6add316506e4827d814498c0c1e4'
-dest='1GgwA7c2ovgWDBoVYsHT5VYXw2QBey1EdF'
-   
+
 def send_from_many(fromaddrs,destination,fee, subkey1,subkey2):  #always sends ALL BTC in ALL SOURCE ADDRESSES
    #fromaddrs and subkey1 and subkey2 need to be arrays of addresses and subkeys
       
@@ -602,10 +602,15 @@ def text_to_addrset(text):
    
    return addresses
          
-         
-a=open('q.txt')
-q=a.read()
-print str(len(q)%40)
+def tx_lookup(txhash):
+   b='https://blockchain.info/rawtx/'
+   b=b+txhash
+   a=requests.get(b)
+   if a.status_code==200:
+      a=a.content
 
-         
+   a=json.loads(a)
+
+   return a
+
 
