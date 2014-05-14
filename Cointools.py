@@ -614,3 +614,11 @@ def tx_lookup(txhash):
    return a
 
 
+def raw_tx_lookup(txhash):
+   a='http://btc.blockr.io/api/v1/tx/raw/'
+   a=a+txhash
+   b=requests.get(a)
+   b=b.content
+   c=json.loads(b)
+   return c['data']['tx']
+   
