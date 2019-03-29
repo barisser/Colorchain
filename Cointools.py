@@ -78,14 +78,14 @@ def generate_subkeys():
     a.append(os.urandom(subkey_complexity).encode('hex')) #subkey2
     return a
 
-def generate_privatekey(subkey1,subkey2):
+def generate_privatekey(subkey1, subkey2):
     keysum=subkey1+subkey2
     secret_exponent=hashlib.sha256(keysum).hexdigest()
     
     privkey=privateKeyToWif(secret_exponent)
     return privkey
 
-def generate_publicaddress(subkey1,subkey2):
+def generate_publicaddress(subkey1, subkey2):
     keysum=subkey1+subkey2
     secret_exponent=hashlib.sha256(keysum).hexdigest()
     address=keyToAddr(secret_exponent)
@@ -100,14 +100,14 @@ def check_address(public_address):
     else:
         return -1
 
-def check_address_subkeys(subkey1,subkey2):
+def check_address_subkeys(subkey1, subkey2):
     global h
-    address=generate_publicaddress(subkey1,subkey2)
+    address=generate_publicaddress(subkey1, subkey2)
     
     return check_address(address)
 
 def generate_receiving_address(destination_address):
-    global g,r
+    global g, r
     a='https://blockchain.info/api/receive?method=create&address='
     a=a+destination_address
     r=requests.get(a)
@@ -135,24 +135,24 @@ class subkeypair:
         self.subkey1=os.urandom(subkey_complexity).encode('hex')
         self.subkey2=os.urandom(subkey_complexity).encode('hex')
         self.referenceid=os.urandom(subkey_complexity).encode('hex')
-        self.publicaddress=generate_publicaddress(self.subkey1,self.subkey2)
+        self.publicaddress=generate_publicaddress(self.subkey1, self.subkey2)
         #return self.publicaddress
         
     def private_key(self):
-        return generate_privatekey(self.subkey1,self.subkey2)
+        return generate_privatekey(self.subkey1, self.subkey2)
 
 def roundfloat(s, decimals):
     n=s
-    n=n*math.pow(10,decimals)
+    n=n*math.pow(10, decimals)
     n=int(n)
-    n=float(n/math.pow(10,decimals))
+    n=float(n/math.pow(10, decimals))
     return n
 
-def split_logarithmically(amt,base, min):
-    global r,s
+def split_logarithmically(amt, base, min):
+    global r, s
     s=amt
     
-    r=int(math.log(amt/min,base))
+    r=int(math.log(amt/min, base))
     a=[0]*(r+1)
     g=0
     v=0
@@ -163,10 +163,10 @@ def split_logarithmically(amt,base, min):
     while s>0.00000000:
         print s
         g=0
-        while g<r+1 and s+min/100>=math.pow(base,g)*min:
+        while g<r+1 and s+min/100>=math.pow(base, g)*min:
             a[g]=a[g]+1
             v=v+1
-            s=s-math.pow(base,g)*min
+            s=s-math.pow(base, g)*min
             g=g+1
 
             if s<1 and s>0:
@@ -175,8 +175,8 @@ def split_logarithmically(amt,base, min):
     #print v
     return a
 
-def split_n(amt,base,min):
-    r=int(math.log(amt/min,base))
+def split_n(amt, base, min):
+    r=int(math.log(amt/min, base))
     a=[0]*(r+1)
     g=0
     v=0
@@ -189,13 +189,13 @@ def split_n(amt,base,min):
         while g<r+1:# and s+min/100>=float(math.pow(base,g)*min):
             a[g]=a[g]+1
             v=v+1
-            s=s-float(int(math.pow(base,g)))*min
+            s=s-float(int(math.pow(base, g)))*min
             g=g+1
         if s<1 and s>0:
            s=-1
     return v
 
-def assemble_logarithmically(amt,base,min, storedset):
+def assemble_logarithmically(amt, base, min, storedset):
     s=amt
     s=s/min
     min=1
@@ -206,14 +206,14 @@ def assemble_logarithmically(amt,base,min, storedset):
 
     g=len(storedset)-1
     while g>-1:
-        if c[g]>0 and s>=math.pow(base,g):
-            n=int(s/math.pow(base,g))
+        if c[g]>0 and s>=math.pow(base, g):
+            n=int(s/math.pow(base, g))
             if n>c[g]:
                 n=c[g]
             c[g]=c[g]-n
             a[g]=a[g]+n
             print s
-            s=s-math.pow(base,g)*n
+            s=s-math.pow(base, g)*n
         g=g-1
         
 
@@ -222,12 +222,12 @@ def assemble_logarithmically(amt,base,min, storedset):
     
 #a=split_logarithmically(100,2,1)
 
-def convert_to_base(x,base):
+def convert_to_base(x, base):
     a=''
     n=30
     found=False
     while n>-1:
-        r=math.pow(base,n)
+        r=math.pow(base, n)
         
         #print r
         b=int(x/r)
@@ -257,18 +257,18 @@ class user:
 
    def __init__(self):
       self.inputsecretexponent=os.urandom(subkey_complexity).encode('hex')
-      self.inputaddress=generate_publicaddress(self.inputsecretexponent,'')
+      self.inputaddress=generate_publicaddress(self.inputsecretexponent, '')
       self.outputaddress=m #TEMPORARY
 
    def generate_subaddresses(self, amt):  #this takes way too long
       a=0
-      n=split_n(amt,increment_base,minincrement)
+      n=split_n(amt, increment_base, minincrement)
       while a<n:
          #print a
          k=subkeypair()
          h1=k.subkey1
          h2=k.subkey2
-         self.subkeys.append([h1,h2])
+         self.subkeys.append([h1, h2])
          #UPLOAD SUBKEY2 TO OUR DATABASE AND BACK UP
          #k.subkey2=''
          save()
@@ -281,10 +281,10 @@ class user:
    def check_and_split(self): #splits input address BTC into new subkeypairs, subkeypairs must already exist
       global dests, outs
       newsum=float(self.checkinputaddress())/100000000
-      newsum=newsum/(1+split_n(newsum,increment_base,minincrement)*standard_fee)
+      newsum=newsum/(1+split_n(newsum, increment_base, minincrement)*standard_fee)
       print "detected sum: "+str(newsum)
       if newsum>0:
-         splitsums=split_logarithmically(newsum,increment_base,minincrement)
+         splitsums=split_logarithmically(newsum, increment_base, minincrement)
          self.totalbalance=self.totalbalance+newsum
       else:
          splitsums=[]
@@ -294,7 +294,7 @@ class user:
       dests=[]
       s=0
       while a<len(splitsums):#for each digit in splitsums
-         amt=minincrement*math.pow(increment_base,a)#   +standard_fee  #dont include standard fee in send_many
+         amt=minincrement*math.pow(increment_base, a)#   +standard_fee  #dont include standard fee in send_many
          print str(amt)
 
          #construct arrays for destinations, outputs
@@ -318,7 +318,7 @@ class user:
 
          a=a+1
       outs[0]=outs[0]+standard_fee
-      send_many(self.inputaddress,outs,dests,standard_fee,0,0,self.inputsecretexponent)
+      send_many(self.inputaddress, outs, dests, standard_fee, 0, 0, self.inputsecretexponent)
 
    def redeem(self):  #redeem received subkeypairs to outputwallet
       global fromaddrs, subkey1s, subkey2s
@@ -335,12 +335,12 @@ class user:
             subkey2s.append(x.subkey2)
 
             
-      send_from_many(fromaddrs,dest,fee,subkey1s,subkey2s)
+      send_from_many(fromaddrs, dest, fee, subkey1s, subkey2s)
 
             #def send_from_many(fromaddrs,destination,fee, subkey1,subkey2):  #always sends ALL BTC in ALL SOURCE ADDRESSES
             
 
-   def send_to_output(self,amt):
+   def send_to_output(self, amt):
       sent=0
       ok=True
       h=0
@@ -356,12 +356,12 @@ class user:
                   fromthisoneamt=self.subkeypairs[h].balance
                subkey1=self.subkeypairs[h].subkey1
                subkey2=self.subkeypairs[h].subkey2
-               send(fromaddr,fromthisoneamt,self.outputaddress,standard_fee,subkey1,subkey2)
+               send(fromaddr, fromthisoneamt, self.outputaddress, standard_fee, subkey1, subkey2)
                self.subkeypairs[h].balance=self.subkeypairs[h].balance-fromthisoneamt-standard_fee
                sent=sent+fromthisoneamt
             h=h+1
 
-def isinside(small,big):
+def isinside(small, big):
     a=len(small)
     b=len(big)
     f=0
@@ -377,22 +377,22 @@ def isinside(small,big):
 
     return found
 
-def find_vanity(vanity,n):
-    k=math.pow(26,n)
+def find_vanity(vanity, n):
+    k=math.pow(26, n)
     a=0
     while a<k:
-        print math.log(a+1,36)
+        print math.log(a+1, 36)
         d=os.urandom(subkey_complexity).encode('hex')
-        b=generate_publicaddress(d,'')
-        if isinside(vanity,b):
+        b=generate_publicaddress(d, '')
+        if isinside(vanity, b):
             a=k
             print "secret exponent: "+str(d)
             print "public address: "+str(b)
         a=a+1
 
-def send_transaction(fromaddress,amount,destination, fee, privatekey):
+def send_transaction(fromaddress, amount, destination, fee, privatekey):
     #try:
-      global ins, outs,h, tx, tx2
+      global ins, outs, h, tx, tx2
       fee=int(fee*100000000)
       amount=int(amount*100000000)
       h=unspent(fromaddress)
@@ -404,20 +404,20 @@ def send_transaction(fromaddress,amount,destination, fee, privatekey):
          if not ok:
                ins.append(x)
                if x['value']>=fee+amount-totalfound:
-                  outs.append({'value':amount,'address':destination})
+                  outs.append({'value': amount, 'address': destination})
                   if x['value']>fee+amount-totalfound:
-                     outs.append({'value':x['value']-amount-fee,'address':fromaddress})
+                     outs.append({'value': x['value']-amount-fee, 'address': fromaddress})
                   ok=True
                   totalfound=fee+amount
                else:
-                  outs.append({'value':x['value'],'address':destination})
+                  outs.append({'value': x['value'], 'address': destination})
                   totalfound=totalfound+x['value']
                 
                 
             
         
-      tx=mktx(ins,outs)
-      tx2=sign(tx,0,privatekey)
+      tx=mktx(ins, outs)
+      tx2=sign(tx, 0, privatekey)
         #tx3=sign(tx2,1,privatekey)
         
       #pushtx(tx2)
@@ -430,8 +430,8 @@ def send_transaction(fromaddress,amount,destination, fee, privatekey):
     #except:
      #   print "failed"
 
-def send_many(fromaddr,outputs,destinations,fee, subkey1,subkey2, secretexponent):
-   global outs,inp, tx, tx2,totalin,b,amounts, totalout
+def send_many(fromaddr, outputs, destinations, fee, subkey1, subkey2, secretexponent):
+   global outs, inp, tx, tx2, totalin, b, amounts, totalout
    amounts=[]
    outs=[]
    ins=[]
@@ -455,23 +455,23 @@ def send_many(fromaddr,outputs,destinations,fee, subkey1,subkey2, secretexponent
       amt=amounts[a]#+feeouts[a]  #in satoshi
       dest=destinations[a]
       b=b+amt
-      outs.append({'value':amt,'address':dest})
+      outs.append({'value': amt, 'address': dest})
       a=a+1
 
    unspentbtc=totalin-b-fee
    if unspentbtc>0:
-      outs.append({'value':unspentbtc,'address':fromaddr})
+      outs.append({'value': unspentbtc, 'address': fromaddr})
 
    if secretexponent<=0:
       priv=hashlib.sha256(subkey1+subkey2).hexdigest()
    else:
       priv=hashlib.sha256(secretexponent).hexdigest()
 
-   tx=mktx(ins,outs)
+   tx=mktx(ins, outs)
    p=0
    tx2=tx
    for x in inp:
-      tx2=sign(tx2,p,priv)
+      tx2=sign(tx2, p, priv)
       p=p+1
    #tx2=sign(tx,0,priv)
    pushtx(tx2)
@@ -495,8 +495,8 @@ def make_info_script(info):
 
 #MAX 75 bytes in info
 #TX not being accepted by blockchain.info
-def send_with_info(fromaddr,amt,destination, fee, secretexponent, info):
-   global outs,inp, tx, tx2,totalin,b,amounts, ins,unspentbtc, detx
+def send_with_info(fromaddr, amt, destination, fee, secretexponent, info):
+   global outs, inp, tx, tx2, totalin, b, amounts, ins, unspentbtc, detx
    amounts=[]
    outs=[]
    ins=[]
@@ -514,15 +514,15 @@ def send_with_info(fromaddr,amt,destination, fee, secretexponent, info):
 
    unspentbtc=int(totalin-inpamount-fee)
 
-   outs.append({'value':inpamount,'address':destination})
+   outs.append({'value': inpamount, 'address': destination})
 
    if unspentbtc>0:
-      outs.append({'value':unspentbtc,'address':fromaddr})
+      outs.append({'value': unspentbtc, 'address': fromaddr})
 
    #info output
-   outs.append({'value':0,'address':destination})
+   outs.append({'value': 0, 'address': destination})
 
-   tx=mktx(ins,outs)
+   tx=mktx(ins, outs)
 
    detx=deserialize(tx)
    outn=len(detx['outs'])
@@ -531,14 +531,14 @@ def send_with_info(fromaddr,amt,destination, fee, secretexponent, info):
 
    priv=hashlib.sha256(secretexponent).hexdigest()
    tx2=tx
-   for i in range(0,outn-1):
-      tx2=sign(tx2,i,priv)
+   for i in range(0, outn-1):
+      tx2=sign(tx2, i, priv)
 
 
-def send_from_many(fromaddrs,destination,fee, subkey1,subkey2):  #always sends ALL BTC in ALL SOURCE ADDRESSES
+def send_from_many(fromaddrs, destination, fee, subkey1, subkey2):  #always sends ALL BTC in ALL SOURCE ADDRESSES
    #fromaddrs and subkey1 and subkey2 need to be arrays of addresses and subkeys
       
-   global inps, tx, tx2, outs,r
+   global inps, tx, tx2, outs, r
 
    #make inputs
    privorder=[]
@@ -556,19 +556,19 @@ def send_from_many(fromaddrs,destination,fee, subkey1,subkey2):  #always sends A
    sfee=int(fee*100000000)
    outs=[]
    amt=totalin-sfee
-   outs.append({'value':amt,'address':destination})
+   outs.append({'value': amt, 'address': destination})
 
    #send tx
-   tx=mktx(inps,outs)
+   tx=mktx(inps, outs)
    tx2=tx
    g=0
    j=0
    while g<len(subkey1):
-      for t in range(0,privorder[g]):
+      for t in range(0, privorder[g]):
          sk1=subkey1[g]
          sk2=subkey2[g]
          priv=hashlib.sha256(sk1+sk2).hexdigest()
-         tx2=sign(tx2,j,priv)
+         tx2=sign(tx2, j, priv)
          j=j+1
       g=g+1
    pushtx(tx2)
@@ -578,11 +578,11 @@ def send_from_many(fromaddrs,destination,fee, subkey1,subkey2):  #always sends A
 
 def send(fromaddr, amt, destination, fee, subkey1, subkey2):
     pk=hashlib.sha256(subkey1+subkey2).hexdigest()
-    send_transaction(fromaddr,amt,destination,fee,pk)
+    send_transaction(fromaddr, amt, destination, fee, pk)
 
 
 def hex_to_address(hex):
-    return hex_to_b58check(hex,0)
+    return hex_to_b58check(hex, 0)
 
 def address_to_hex(addr):
     return b58check_to_hex(addr)
