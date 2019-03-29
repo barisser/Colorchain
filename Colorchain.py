@@ -31,9 +31,9 @@ def saveblock(x):
     whichdb='blocks'+str(int(x/blocksperfile))+'.txt' 
     
     if(x==0):
-        f=open(whichdb,'w') 
+        f=open(whichdb, 'w') 
     else:
-        f=open(whichdb,'a+')  #opens for appending and reading only
+        f=open(whichdb, 'a+')  #opens for appending and reading only
     
     b=download_block(x)  #already returned as JSON object
     b2=json.dumps(b)  #non-json
@@ -55,7 +55,7 @@ def saveblock(x):
 
     f.close()
 
-def saveblocks(startx,endx):
+def saveblocks(startx, endx):
     x=startx
     global lastblockdb
     while(x<endx+1):
@@ -124,9 +124,9 @@ def transactions_in_block(blockobject):
                     newbtc=a[0][1]-amt
                     ntrans=a[0][2]+1
                     totrcv=a[0][3]#-amt
-                    update_address(addr,newbtc,ntrans,totrcv)
+                    update_address(addr, newbtc, ntrans, totrcv)
                 else:
-                    add_address(addr,-1*amt,1,0)
+                    add_address(addr, -1*amt, 1, 0)
                     newaddresses=newaddresses+1
 
         outs=trans['out']
@@ -146,9 +146,9 @@ def transactions_in_block(blockobject):
                     newbtc=a[0][1]+amt
                     ntrans=a[0][2]+1
                     totrcv=a[0][3]+amt
-                    update_address(addr,newbtc,ntrans,totrcv)
+                    update_address(addr, newbtc, ntrans, totrcv)
                 else:
-                    add_address(addr,amt,1,amt)
+                    add_address(addr, amt, 1, amt)
                     newaddresses=newaddresses+1
 
 
@@ -244,14 +244,14 @@ def lastblock():
     a=curs.fetchall()
     return int(a[0][0])
 
-def blocks(start,end):  #inclusive
+def blocks(start, end):  #inclusive
     a=start
     g=lastblock()
     if a>g:
         while a<end+1:
             #t=(datetime.datetime.fromtimestamp(int(k)).strftime('%Y-%m-%d %H:%M:%S'))
             #print "BLOCK: "+str(a)#+"       "+str(t)
-            j=block(a,True)
+            j=block(a, True)
 
             if not j:
                 a=end+1
@@ -264,7 +264,7 @@ def blocks(start,end):  #inclusive
     check()
 
 def connect_to_db():
-    db=MySQLdb.connect(host=dbhost,user=dbuser,passwd=dbpassword,db=dbname)
+    db=MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpassword, db=dbname)
     return db
     
 def init():
@@ -281,7 +281,7 @@ def read_address(the_address):
     a=curs.fetchall()
     return a
 
-def add_address(the_address,btc,ntransactions,totalreceived):
+def add_address(the_address, btc, ntransactions, totalreceived):
     curs=db.cursor()
     if len(the_address)<50 and len(str(btc))<40 and len(str(ntransactions))<50 and len(str(totalreceived))<50:
         f="INSERT INTO Addresses (ADDRESS,BTC,N_TRANSACTIONS,TOTAL_RECEIVED) VALUES ('"+the_address+"','"+str(btc)
@@ -289,7 +289,7 @@ def add_address(the_address,btc,ntransactions,totalreceived):
         curs.execute(f)
         db.commit()
 
-def update_address(the_address,btc,ntransactions,totalreceived):
+def update_address(the_address, btc, ntransactions, totalreceived):
 
    curs=db.cursor()
    
@@ -345,7 +345,7 @@ def info_to_addr(info):
     print len(a)
     return cointools.hex_to_address(a)
 
-def send_color_coin(fromaddr,toaddr,amt,colorname,fromsecretexponent):
+def send_color_coin(fromaddr, toaddr, amt, colorname, fromsecretexponent):
     #sends X satoshi to destination address (toaddr)
     #sends 1 satoshi to ColoredCoin Reference Address
     #sends HEX INFO Base 58 encoded into address to indicate TX HASH of previous address
@@ -377,7 +377,7 @@ def send_color_coin(fromaddr,toaddr,amt,colorname,fromsecretexponent):
     outputs.append(0.00000001)
     fee=cointools.standard_fee
 
-    cointools.send_many(fromaddr,outputs,to,fee,0,0,fromsecretexponent)
+    cointools.send_many(fromaddr, outputs, to, fee, 0, 0, fromsecretexponent)
 
     db.close()
     return a
@@ -443,7 +443,7 @@ def read_color_address(the_address, color):
     aa=a
 
 
-def add_color_address(the_address,color,amt):  #input amt as integer, goes in DB as integer
+def add_color_address(the_address, color, amt):  #input amt as integer, goes in DB as integer
     curs=db.cursor()
     #amt=amt*0.00000001
 
@@ -451,7 +451,7 @@ def add_color_address(the_address,color,amt):  #input amt as integer, goes in DB
     curs.execute(f)
     db.commit()
 
-def update_color_address(the_address,color,amt):
+def update_color_address(the_address, color, amt):
    curs=db.cursor()
    #amt=amt*0.00000001
     #update existing entry
@@ -463,9 +463,9 @@ def update_color_address(the_address,color,amt):
          
 
 
-def color_block(blockobject,color): #process colored transactions in block X    
+def color_block(blockobject, color): #process colored transactions in block X    
     db=connect_to_db()
-    ctrans=read_colored_in_block(blockobject,color)
+    ctrans=read_colored_in_block(blockobject, color)
     #need to check each transaction for legitimacy
     global outvalues, outputs, inpaddr, totalin
     colorinfo=get_color_info(color) 
@@ -480,7 +480,7 @@ def color_block(blockobject,color): #process colored transactions in block X
         y=x['inputs'][0]
                     #for y in x['inputs']:
         inpaddr=y['prev_out']['addr']
-        r=read_color_address(inpaddr,color)
+        r=read_color_address(inpaddr, color)
         print str(inpaddr)+"  "+str(r)
         totalin=totalin+r
 
@@ -500,24 +500,24 @@ def color_block(blockobject,color): #process colored transactions in block X
             a=0
             while a<len(outputs):
 
-                g=read_color_address(outputs[a],color)
+                g=read_color_address(outputs[a], color)
                 if g==0:
-                    add_color_address(outputs[a],color,outvalues[a])
+                    add_color_address(outputs[a], color, outvalues[a])
                 else:
-                    update_color_address(outputs[a],color,g+outvalues[a])
+                    update_color_address(outputs[a], color, g+outvalues[a])
 
                 a=a+1
 
             #only 1 input per transaction allowed, first
-            update_color_address(inpaddr,color,totalin-sum)
+            update_color_address(inpaddr, color, totalin-sum)
     db.close()   
             
-def color_blocks(start,end,color):  #inclusive, NOT THE only way to search
+def color_blocks(start, end, color):  #inclusive, NOT THE only way to search
     #probably not very efficient anyway
     b=start
     while b<end+1:
         a=download_block(b)
-        color_block(b,color)
+        color_block(b, color)
         print "BLOCK: "+str(b)+" CHECKED FOR COLOR: "+str(color)
         b=b+1
     
@@ -566,7 +566,7 @@ def check_all_addresses():
 
         
 
-def process_tx(blockn,fromtxhash):
+def process_tx(blockn, fromtxhash):
     blockobject=download_block(blockn)
     blockobjectt=blockobject['tx']
     for trans in blockobjectt:
@@ -595,9 +595,9 @@ def process_tx(blockn,fromtxhash):
                         newbtc=a[0][1]-amt
                         ntrans=a[0][2]+1
                         totrcv=a[0][3]#-amt
-                        update_address(addr,newbtc,ntrans,totrcv)
+                        update_address(addr, newbtc, ntrans, totrcv)
                     else:
-                        add_address(addr,-1*amt,1,0)
+                        add_address(addr, -1*amt, 1, 0)
                         newaddresses=newaddresses+1
 
             outs=trans['out']
@@ -617,9 +617,9 @@ def process_tx(blockn,fromtxhash):
                         newbtc=a[0][1]+amt
                         ntrans=a[0][2]+1
                         totrcv=a[0][3]+amt
-                        update_address(addr,newbtc,ntrans,totrcv)
+                        update_address(addr, newbtc, ntrans, totrcv)
                     else:
-                        add_address(addr,amt,1,amt)
+                        add_address(addr, amt, 1, amt)
                         newaddresses=newaddresses+1
 
 
