@@ -57,12 +57,12 @@ def base58CheckEncode(version, payload):
 
 def privateKeyToWif(key_hex):    
     return base58CheckEncode(0x80, key_hex.decode('hex'))
-    
+
 def privateKeyToPublicKey(s):
     sk = ecdsa.SigningKey.from_string(s.decode('hex'), curve=ecdsa.SECP256k1)
     vk = sk.verifying_key
     return ('\04' + sk.verifying_key.to_string()).encode('hex')
-    
+
 def pubKeyToAddr(s):
     ripemd160 = hashlib.new('ripemd160')
     ripemd160.update(hashlib.sha256(s.decode('hex')).digest())
@@ -81,7 +81,7 @@ def generate_subkeys():
 def generate_privatekey(subkey1, subkey2):
     keysum=subkey1+subkey2
     secret_exponent=hashlib.sha256(keysum).hexdigest()
-    
+
     privkey=privateKeyToWif(secret_exponent)
     return privkey
 
@@ -103,7 +103,7 @@ def check_address(public_address):
 def check_address_subkeys(subkey1, subkey2):
     global h
     address=generate_publicaddress(subkey1, subkey2)
-    
+
     return check_address(address)
 
 def generate_receiving_address(destination_address):
@@ -118,8 +118,8 @@ def generate_receiving_address(destination_address):
         return str(receiving_address)
     else:
         return "ERROR"
-        
-        
+
+
     #'$receiving_address&callback=$callback_url
 
 class subkeypair:
@@ -137,7 +137,7 @@ class subkeypair:
         self.referenceid=os.urandom(subkey_complexity).encode('hex')
         self.publicaddress=generate_publicaddress(self.subkey1, self.subkey2)
         #return self.publicaddress
-        
+
     def private_key(self):
         return generate_privatekey(self.subkey1, self.subkey2)
 
@@ -151,7 +151,7 @@ def roundfloat(s, decimals):
 def split_logarithmically(amt, base, min):
     global r, s
     s=amt
-    
+
     r=int(math.log(amt/min, base))
     a=[0]*(r+1)
     g=0
@@ -171,7 +171,7 @@ def split_logarithmically(amt, base, min):
 
             if s<1 and s>0:
                s=-1
-         
+
     #print v
     return a
 
@@ -215,11 +215,11 @@ def assemble_logarithmically(amt, base, min, storedset):
             print s
             s=s-math.pow(base, g)*n
         g=g-1
-        
 
-    
+
+
     return a
-    
+
 #a=split_logarithmically(100,2,1)
 
 def convert_to_base(x, base):
@@ -228,7 +228,7 @@ def convert_to_base(x, base):
     found=False
     while n>-1:
         r=math.pow(base, n)
-        
+
         #print r
         b=int(x/r)
         if b>0:
@@ -236,7 +236,7 @@ def convert_to_base(x, base):
         if found==True:
             a=a+str(b)
         x=x-b*r
-        
+
 
         n=n-1
 
@@ -252,8 +252,8 @@ class user:
    subkeypairs=[]
 
    subkeys=[] #for memory purposes
-    
-    
+
+
 
    def __init__(self):
       self.inputsecretexponent=os.urandom(subkey_complexity).encode('hex')
@@ -313,7 +313,7 @@ class user:
             except:
                print "insufficient subkeypairs"
             s=s+1
-               
+
             h=h+1
 
          a=a+1
@@ -327,18 +327,18 @@ class user:
       fee=standard_fee
       subkey1s=[]
       subkey2s=[]
-      
+
       for x in self.subkeypairs:
          if x.received==True:
             fromaddrs.append(x.publicaddress)
             subkey1s.append(x.subkey1)
             subkey2s.append(x.subkey2)
 
-            
+
       send_from_many(fromaddrs, dest, fee, subkey1s, subkey2s)
 
             #def send_from_many(fromaddrs,destination,fee, subkey1,subkey2):  #always sends ALL BTC in ALL SOURCE ADDRESSES
-            
+
 
    def send_to_output(self, amt):
       sent=0
@@ -412,17 +412,17 @@ def send_transaction(fromaddress, amount, destination, fee, privatekey):
                else:
                   outs.append({'value': x['value'], 'address': destination})
                   totalfound=totalfound+x['value']
-                
-                
-            
-        
+
+
+
+
       tx=mktx(ins, outs)
       tx2=sign(tx, 0, privatekey)
         #tx3=sign(tx2,1,privatekey)
-        
+
       #pushtx(tx2)
       print "Sending "+str(amount)+" from "+str(fromaddress)+" to "+str(destination)+" with fee= "+str(fee)+" and secret exponent= "+str(privatekey)
-        
+
         #a='https://blockchain.info/pushtx/'
         #b=requests.get(a+tx3)
         #if b.response_code==200:
@@ -504,7 +504,7 @@ def send_with_info(fromaddr, amt, destination, fee, secretexponent, info):
    fee=int(fee*100000000)
    #amounts.append(int(amt*100000000))
    inpamount=int(amt*100000000)
-   
+
    inp=unspent(fromaddr)
 
    for x in inp:
@@ -537,7 +537,7 @@ def send_with_info(fromaddr, amt, destination, fee, secretexponent, info):
 
 def send_from_many(fromaddrs, destination, fee, subkey1, subkey2):  #always sends ALL BTC in ALL SOURCE ADDRESSES
    #fromaddrs and subkey1 and subkey2 need to be arrays of addresses and subkeys
-      
+
    global inps, tx, tx2, outs, r
 
    #make inputs
@@ -550,7 +550,7 @@ def send_from_many(fromaddrs, destination, fee, subkey1, subkey2):  #always send
       inps=inps+r
       for y in r:
             totalin=totalin+y['value']
-         
+
 
    #make output
    sfee=int(fee*100000000)
@@ -572,8 +572,8 @@ def send_from_many(fromaddrs, destination, fee, subkey1, subkey2):  #always send
          j=j+1
       g=g+1
    pushtx(tx2)
-   
-   
+
+
 
 
 def send(fromaddr, amt, destination, fee, subkey1, subkey2):
@@ -599,9 +599,9 @@ def text_to_addrset(text):
          st=hex_to_address(st)
          addresses.append(st)
          st=''
-   
+
    return addresses
-         
+
 def tx_lookup(txhash):
    b='https://blockchain.info/rawtx/'
    b=b+txhash
@@ -621,4 +621,4 @@ def raw_tx_lookup(txhash):
    b=b.content
    c=json.loads(b)
    return c['data']['tx']
-   
+
