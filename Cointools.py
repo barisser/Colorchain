@@ -621,4 +621,3 @@ def raw_tx_lookup(txhash):
    b=b.content
    c=json.loads(b)
    return c['data']['tx']
-   
