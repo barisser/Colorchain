@@ -13,6 +13,7 @@ dbname=''
 
 blocksperfile=100
 
+
 def download_block(x):
     a=requests.get("https://blockchain.info/block-height/"+str(x)+"?format=json")
 
@@ -25,6 +26,7 @@ def download_block(x):
                 #is main chain block, interpret
 
                 return x
+
 
 def saveblock(x):
 
@@ -55,6 +57,7 @@ def saveblock(x):
 
     f.close()
 
+
 def saveblocks(startx,endx):
     x=startx
     global lastblockdb
@@ -66,6 +69,7 @@ def saveblocks(startx,endx):
             x=endx+1
         
         x=x+1
+
 
 def loadblockfile(x):  #from locally saved blocks in txt format
     global blocksdb, blockfile
@@ -167,6 +171,7 @@ def transactions_in_block(blockobject):
     returns.append(newtransactions)
     return returns
 
+
 def purge_empty():
     db=connect_to_db()
     f="DELETE FROM Addresses WHERE BTC='0';"
@@ -175,6 +180,7 @@ def purge_empty():
     
     db.commit()
     db.close()
+
 
 def block(x, local):
     global db
@@ -222,6 +228,7 @@ def block(x, local):
     else:
         return False
 
+
 def check():
     global c
     db=connect_to_db()
@@ -244,6 +251,7 @@ def lastblock():
     a=curs.fetchall()
     return int(a[0][0])
 
+
 def blocks(start,end):  #inclusive
     a=start
     g=lastblock()
@@ -263,10 +271,12 @@ def blocks(start,end):  #inclusive
 
     check()
 
+
 def connect_to_db():
     db=MySQLdb.connect(host=dbhost,user=dbuser,passwd=dbpassword,db=dbname)
     return db
     
+
 def init():
     global db
     db=connect_to_db()
@@ -281,6 +291,7 @@ def read_address(the_address):
     a=curs.fetchall()
     return a
 
+
 def add_address(the_address,btc,ntransactions,totalreceived):
     curs=db.cursor()
     if len(the_address)<50 and len(str(btc))<40 and len(str(ntransactions))<50 and len(str(totalreceived))<50:
@@ -288,6 +299,7 @@ def add_address(the_address,btc,ntransactions,totalreceived):
         f=f+"','"+str(ntransactions)+"','"+str(totalreceived)+"');"
         curs.execute(f)
         db.commit()
+
 
 def update_address(the_address,btc,ntransactions,totalreceived):
 
@@ -328,6 +340,7 @@ def add_color_coin(name, sourceaddress, referenceaddress):
     db.commit() 
     db.close()
 
+
 def get_color_info(color):
     #returns name, source, reference
     db=connect_to_db()
@@ -340,10 +353,12 @@ def get_color_info(color):
         return 0
     return a[0]
 
+
 def info_to_addr(info):
     a=info.encode('hex')
     print len(a)
     return cointools.hex_to_address(a)
+
 
 def send_color_coin(fromaddr,toaddr,amt,colorname,fromsecretexponent):
     #sends X satoshi to destination address (toaddr)
@@ -413,6 +428,7 @@ def read_colored_in_block(blockobject, color):
     db.close()
     return ctransactions
 
+
 def read_color_address(the_address, color):
     global aa
     curs=db.cursor()
@@ -450,6 +466,7 @@ def add_color_address(the_address,color,amt):  #input amt as integer, goes in DB
     f="INSERT INTO Addresses (ADDRESS,"+color+") VALUES ('"+the_address+"','"+str(amt)+"');"
     curs.execute(f)
     db.commit()
+
 
 def update_color_address(the_address,color,amt):
    curs=db.cursor()
@@ -512,6 +529,7 @@ def color_block(blockobject,color): #process colored transactions in block X
             update_color_address(inpaddr,color,totalin-sum)
     db.close()   
             
+
 def color_blocks(start,end,color):  #inclusive, NOT THE only way to search
     #probably not very efficient anyway
     b=start
@@ -521,6 +539,7 @@ def color_blocks(start,end,color):  #inclusive, NOT THE only way to search
         print "BLOCK: "+str(b)+" CHECKED FOR COLOR: "+str(color)
         b=b+1
     
+
 def download_tx(txid):
     #may be vulnerable to malleability?
     g='https://blockchain.info/tx-index/'+str(txid)+'?format=json'
@@ -553,6 +572,7 @@ def check_address(addr):
         p=0
     else:
         print str(addr)+"   "+str(c)+"   "+str(btc)
+
 
 def check_all_addresses():
     curs=db.cursor()
