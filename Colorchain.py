@@ -31,12 +31,12 @@ def download_block(x):
 def saveblock(x):
 
     whichdb='blocks'+str(int(x/blocksperfile))+'.txt' 
-    
+
     if(x==0):
         f=open(whichdb,'w') 
     else:
         f=open(whichdb,'a+')  #opens for appending and reading only
-    
+
     b=download_block(x)  #already returned as JSON object
     b2=json.dumps(b)  #non-json
     print str(x) + "    "+str(len(b2))
@@ -64,10 +64,10 @@ def saveblocks(startx,endx):
     while(x<endx+1):
         #print x
         r=saveblock(x)
-        
+
         if(r==False):
             x=endx+1
-        
+
         x=x+1
 
 
@@ -90,7 +90,7 @@ def loadblockfile(x):  #from locally saved blocks in txt format
                 blk=blockfile.read(leader)
                 blk=json.loads(blk)
                 blocksdb.append(blk)
-        
+
 
         #stuff=json.load(blockfile)
         #for x in stuff:
@@ -107,7 +107,7 @@ def transactions_in_block(blockobject):
     returns=[]
     lt=len(transactions)
     lk=1
-    
+
     for trans in transactions:
         newtransactions=newtransactions+1
         #handle inputs
@@ -157,16 +157,16 @@ def transactions_in_block(blockobject):
 
 
         #update overview as done with this tx
-        
+
         f="UPDATE OVERVIEW SET LAST_TX_HASH='"+str(trans['hash'])+"';"
         print trans['hash']+"  "+str(lk)+" / "+str(lt)
         lk=lk+1
         curs=db.cursor()
         curs.execute(f)
-        
+
  #   db.commit()
    # db.close()
-            
+
     returns.append(newaddresses)
     returns.append(newtransactions)
     return returns
@@ -177,7 +177,7 @@ def purge_empty():
     f="DELETE FROM Addresses WHERE BTC='0';"
     curs=db.cursor()
     curs.execute(f)
-    
+
     db.commit()
     db.close()
 
@@ -194,11 +194,11 @@ def block(x, local):
         w=int(x/blocksperfile)
         loadblockfile(w)
         a=blocksdb[v]
-        
-        
+
+
     t=a['time']
     j=datetime.datetime.fromtimestamp(int(t)).strftime('%Y-%m-%d %H:%M:%S')
-  
+
     overviewdata=transactions_in_block(a)
 
     curs=db.cursor()
@@ -212,13 +212,13 @@ def block(x, local):
     f=f+",N_TRANSACTIONS='"+str(int(c[0][1])+overviewdata[1])+"',N_ADDRESSES='"
     f=f+str(int(c[0][2])+overviewdata[0])+"',TIME='"+j+"', LAST_TX_HASH='donewithblock';"
 
-    
-    
+
+
     curs.execute(f)
     db.commit()
-    
+
     #purge_empty()
-    
+
     db.close()
     print "BLOCK: "+str(c[0][0])+"   N_ADDRESSES: "+str(c[0][2])+"  N_TRANSACTIONS: "+str(c[0][1])+"   "+str(j)
 
@@ -241,7 +241,7 @@ def check():
     for x in c:
         b=b+x[0]
     return b/(a+1)
-    
+
 
 def lastblock():
     db=connect_to_db()
@@ -264,7 +264,7 @@ def blocks(start,end):  #inclusive
             if not j:
                 a=end+1
                 print "Check not correct"
-            
+
             a=a+1
     else:
         print "dont incorporate blocks redundantly!"
@@ -275,7 +275,7 @@ def blocks(start,end):  #inclusive
 def connect_to_db():
     db=MySQLdb.connect(host=dbhost,user=dbuser,passwd=dbpassword,db=dbname)
     return db
-    
+
 
 def init():
     global db
@@ -304,7 +304,7 @@ def add_address(the_address,btc,ntransactions,totalreceived):
 def update_address(the_address,btc,ntransactions,totalreceived):
 
    curs=db.cursor()
-   
+
     #update existing entry
    if len(the_address)<50 and len(str(btc))<40 and len(str(ntransactions))<50 and len(str(totalreceived))<50:
         f="UPDATE Addresses SET BTC='"+str(btc)+"'"
@@ -312,8 +312,8 @@ def update_address(the_address,btc,ntransactions,totalreceived):
         f=f+"WHERE ADDRESS='"+the_address+"';"
         curs.execute(f)
         db.commit()
-            
-    
+
+
 def delete_all_addresses():
     db=connect_to_db()
     curs=db.cursor()
@@ -331,7 +331,7 @@ def add_color_coin(name, sourceaddress, referenceaddress):
     curs=db.cursor()
     f="ALTER TABLE Addresses"
     f=f+" ADD "+str(name)+" BIGINT;"
-    
+
     curs.execute(f)
 
     f="INSERT INTO COINCOLORS VALUES ('"
@@ -400,7 +400,7 @@ def send_color_coin(fromaddr,toaddr,amt,colorname,fromsecretexponent):
 
 def read_colored_in_block(blockobject, color):
     transactions=blockobject['tx']
-    
+
     db=connect_to_db()
     curs=db.cursor()
     f="SELECT * FROM COINCOLORS WHERE NAME='"+color+"';"
@@ -421,10 +421,10 @@ def read_colored_in_block(blockobject, color):
                         colored=True
                 except:
                     print "invalid recipient detected somewhere in block"
-                
+
             if colored:
                 ctransactions.append(x)
-                
+
     db.close()
     return ctransactions
 
@@ -440,10 +440,10 @@ def read_color_address(the_address, color):
         a=curs.fetchall()
         #except:
             #print "Coin Not Found"
-    
+
     if len(a)==0:
         a=[[0]]
-    
+
 
     g=get_color_info(color)
     if not g==0: #coin is valid
@@ -477,7 +477,7 @@ def update_color_address(the_address,color,amt):
    f=f+"WHERE ADDRESS='"+the_address+"';"
    curs.execute(f)
    db.commit()
-         
+
 
 
 def color_block(blockobject,color): #process colored transactions in block X    
@@ -528,7 +528,7 @@ def color_block(blockobject,color): #process colored transactions in block X
             #only 1 input per transaction allowed, first
             update_color_address(inpaddr,color,totalin-sum)
     db.close()   
-            
+
 
 def color_blocks(start,end,color):  #inclusive, NOT THE only way to search
     #probably not very efficient anyway
@@ -538,7 +538,7 @@ def color_blocks(start,end,color):  #inclusive, NOT THE only way to search
         color_block(b,color)
         print "BLOCK: "+str(b)+" CHECKED FOR COLOR: "+str(color)
         b=b+1
-    
+
 
 def download_tx(txid):
     #may be vulnerable to malleability?
@@ -560,7 +560,7 @@ def check_address(addr):
     b=requests.get(a)
     if b.status_code==200:
         c=b.content
-        
+
     #return c
     curs=db.cursor()
     f="SELECT * FROM Addresses WHERE Address='"+str(addr)+"';"
@@ -584,7 +584,7 @@ def check_all_addresses():
         a.append(x[0])
     return a
 
-        
+
 
 def process_tx(blockn,fromtxhash):
     blockobject=download_block(blockn)
@@ -595,7 +595,7 @@ def process_tx(blockn,fromtxhash):
         returns=[]
         if trans['hash']==fromtxhash:
             #process that tx
-            
+
             newtransactions=newtransactions+1
             #handle inputs
             inps=trans['inputs']
@@ -643,10 +643,10 @@ def process_tx(blockn,fromtxhash):
                         newaddresses=newaddresses+1
 
 
-            
-        
-        
-        
+
+
+
+
 init()
 
 db=connect_to_db()
